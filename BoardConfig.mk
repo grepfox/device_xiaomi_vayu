@@ -57,7 +57,7 @@ TARGET_USES_HWC2 := true
 TARGET_USES_ION := true
 
 # Screen Density
-TARGET_SCREEN_DENSITY := 440
+TARGET_SCREEN_DENSITY := 410 ## smallest width 421dp
 
 # Filesystem
 TARGET_FS_CONFIG_GEN := $(DEVICE_PATH)/configs/config.fs
