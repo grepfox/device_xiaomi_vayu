@@ -13,7 +13,7 @@ DEVICE_PATH := device/xiaomi/vayu
 TARGET_OTA_ASSERT_DEVICE := vayu,bhima
 
 # Display
-TARGET_SCREEN_DENSITY := 440
+TARGET_SCREEN_DENSITY := 410
 
 # Init
 TARGET_INIT_VENDOR_LIB := //$(DEVICE_PATH):init_xiaomi_vayu
