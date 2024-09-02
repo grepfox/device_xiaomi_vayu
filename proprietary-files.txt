@@ -42,10 +42,10 @@ vendor/lib/rfsa/adsp/tas25xx_TI_0.bin
 vendor/firmware/tas256x_reg.bin
 
 # Audio hardware
-vendor/lib/hw/audio.primary.msmnile.so
+vendor/lib/hw/audio.primary.msmnile.so:vendor/lib/hw/audio.primary.vayu.so
 vendor/lib/hw/vendor.qti.hardware.audiohalext@1.0-impl.so
 vendor/lib/vndk/libxlog.so
-vendor/lib/liba2dpoffload.so
+vendor/lib/liba2dpoffload.so:vendor/lib/liba2dpoffload_vayu.so
 vendor/lib/libadm.so
 vendor/lib/libaudio_log_utils.so
 vendor/lib/libaudioconfigstore.so
