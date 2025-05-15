@@ -1,12 +1,15 @@
 #!/bin/bash
 #
 # Copyright (C) 2016 The CyanogenMod Project
-# Copyright (C) 2017-2020 The LineageOS Project
+# Copyright (C) 2017-2021 The LineageOS Project
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
 set -e
+
+DEVICE=vayu
+VENDOR=xiaomi
 
 # Load extract_utils and do some sanity checks
 MY_DIR="${BASH_SOURCE%/*}"
@@ -24,19 +27,11 @@ source "${HELPER}"
 # Default to sanitizing the vendor folder before extraction
 CLEAN_VENDOR=true
 
-ONLY_COMMON=
-ONLY_TARGET=
-KANG=
 SECTION=
+KANG=
 
 while [ "${#}" -gt 0 ]; do
     case "${1}" in
-        --only-common )
-                ONLY_COMMON=true
-                ;;
-        --only-target )
-                ONLY_TARGET=true
-                ;;
         -n | --no-cleanup )
                 CLEAN_VENDOR=false
                 ;;
@@ -54,23 +49,50 @@ while [ "${#}" -gt 0 ]; do
     shift
 done
 
+# Get the host OS
+HOST="$(uname | tr '[:upper:]' '[:lower:]')"
+PATCHELF_TOOL="${ANDROID_ROOT}/prebuilts/tools-extras/${HOST}-x86/bin/patchelf"
+
+# Check if prebuilt patchelf exists
+if [ -f $PATCHELF_TOOL ]; then
+    echo "Using prebuilt patchelf at $PATCHELF_TOOL"
+else
+    # If prebuilt patchelf does not exist, use patchelf from PATH
+    PATCHELF_TOOL="patchelf"
+fi
+
+# Do not continue if patchelf is not installed
+if [[ $(which patchelf) == "" ]] && [[ $PATCHELF_TOOL == "patchelf" ]] && [[ $FORCE != "true" ]]; then
+    echo "The script will not be able to do blob patching as patchelf is not installed."
+    echo "Run the script with the argument -f or --force to bypass this check"
+    exit 1
+fi
+
 if [ -z "${SRC}" ]; then
     SRC="adb"
 fi
 
-if [ -z "${ONLY_TARGET}" ]; then
-    # Initialize the helper for common device
-    setup_vendor "${DEVICE_COMMON}" "${VENDOR}" "${ANDROID_ROOT}" true "${CLEAN_VENDOR}"
+function blob_fixup() {
+    case "${1}" in
+        vendor/etc/init/init.batterysecret.rc)
+            sed -i "/seclabel u:r:batterysecret:s0/d" "${2}"
+            ;;
+        vendor/lib/hw/audio.primary.vayu.so)
+            sed -i "s|/vendor/lib/liba2dpoffload\.so|liba2dpoffload_vayu\.so\x00\x00\x00\x00\x00\x00\x00|g" "${2}"
+            ;;
+        vendor/lib64/hw/camera.qcom.so)
+            sed -i "s/\x73\x74\x5F\x6C\x69\x63\x65\x6E\x73\x65\x2E\x6C\x69\x63/\x63\x61\x6D\x65\x72\x61\x5F\x63\x6E\x66\x2E\x74\x78\x74/g" "${2}"
+            ;;
+        vendor/lib64/camera/components/com.qti.node.watermark.so)
+            grep -q "libpiex_shim.so" "${2}" || "${PATCHELF}" --add-needed "libpiex_shim.so" "${2}"
+            ;;
+    esac
+}
 
-    extract "${MY_DIR}/proprietary-files.txt" "${SRC}" "${KANG}" --section "${SECTION}"
-fi
+# Initialize the helper
+setup_vendor "${DEVICE}" "${VENDOR}" "${ANDROID_ROOT}" true "${CLEAN_VENDOR}"
 
-if [ -z "${ONLY_COMMON}" ] && [ -s "${MY_DIR}/../${DEVICE}/proprietary-files.txt" ]; then
-    # Reinitialize the helper for device
-    source "${MY_DIR}/../${DEVICE}/extract-files.sh"
-    setup_vendor "${DEVICE}" "${VENDOR}" "${ANDROID_ROOT}" false "${CLEAN_VENDOR}"
-
-    extract "${MY_DIR}/../${DEVICE}/proprietary-files.txt" "${SRC}" "${KANG}" --section "${SECTION}"
-fi
+extract "${MY_DIR}/proprietary-files.txt" "${SRC}" \
+        "${KANG}" --section "${SECTION}"
 
 "${MY_DIR}/setup-makefiles.sh"
