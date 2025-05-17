@@ -10,12 +10,18 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/updatable_apex.mk)
 # Setup dalvik vm configs
 $(call inherit-product, frameworks/native/build/phone-xhdpi-6144-dalvik-heap.mk)
 
+# Inherit from vendor custom
+$(call inherit-product-if-exists, vendor/custom/build.mk)
+
 # FM
 TARGET_HAS_FM := true
 
 # AAPT
 PRODUCT_AAPT_CONFIG := normal
 PRODUCT_AAPT_PREF_CONFIG := xxhdpi
+
+# Chromite
+SHIP_CHROMITE_BROWSER := true
 
 # Shipping API level
 PRODUCT_SHIPPING_API_LEVEL := 30
